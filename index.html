@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#170d13">
+  <title>忍界招募 · 抽卡模拟器</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, "Microsoft YaHei", sans-serif;
+      color: #fff3e7;
+      background: #170d13;
+      font-synthesis: none;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      padding: 28px 16px 44px;
+      background:
+        radial-gradient(ellipse at 50% -10%, #67272e 0, transparent 48%),
+        radial-gradient(ellipse at 100% 80%, #392018 0, transparent 40%),
+        #170d13;
+    }
+    button { font: inherit; }
+    .app { width: min(1050px, 100%); margin: auto; }
+    header { margin: 0 0 21px; text-align: center; }
+    .eyebrow { color: #ffbc71; font-size: .78rem; letter-spacing: .3em; }
+    h1 { margin: 6px 0 4px; font-size: clamp(1.7rem, 5vw, 2.7rem); }
+    header p { margin: 0; color: #d3b5a4; }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: 16px; }
+    .stack { display: grid; align-content: start; gap: 15px; }
+    .panel {
+      padding: 18px;
+      border: 1px solid #6b3b34;
+      border-radius: 14px;
+      background: linear-gradient(145deg, #28171aef, #1d1415f5);
+      box-shadow: 0 14px 35px #0005, inset 0 1px #ffffff0a;
+    }
+    h2 { margin: 0 0 13px; font-size: 1.12rem; }
+    .rate-grid, .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .rate, .stat {
+      padding: 11px;
+      border: 1px solid #50342f;
+      border-radius: 9px;
+      background: #301e1e;
+    }
+    .rate span, .stat span { display: block; color: #cbb2a2; font-size: .82rem; }
+    .rate strong, .stat strong { display: block; margin-top: 2px; font-size: 1.35rem; }
+    .s-text { color: #ffd26b; }
+    .a-text { color: #d4a0ff; }
+    .other-text { color: #9bd6dc; }
+    .note { margin: 11px 0 0; color: #bda899; font-size: .82rem; line-height: 1.6; }
+    .pity-head { display: flex; justify-content: space-between; gap: 10px; margin: 15px 0 7px; color: #e7d5c6; font-size: .9rem; }
+    .pity-track { height: 11px; overflow: hidden; border: 1px solid #694a3b; border-radius: 999px; background: #120e0f; }
+    .pity-fill { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #bf542e, #ffc65d); transition: width .25s ease; }
+    .actions { display: flex; flex-wrap: wrap; gap: 9px; }
+    .actions button {
+      flex: 1 1 105px;
+      min-height: 45px;
+      padding: 9px 13px;
+      border: 1px solid #ffbd77;
+      border-radius: 9px;
+      background: linear-gradient(#db753b, #9e3d2c);
+      color: #fff9ee;
+      font-weight: 750;
+      box-shadow: 0 4px 12px #0003;
+      cursor: pointer;
+    }
+    .actions button:hover { filter: brightness(1.12); transform: translateY(-1px); }
+    .actions button.secondary { border-color: #70504a; background: #382727; color: #ead9c9; }
+    .actions button:focus-visible, .tabs button:focus-visible { outline: 3px solid #fff1bd; outline-offset: 2px; }
+    .result-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+    .result-head h2 { margin-bottom: 0; }
+    .latest-label { color: #bda899; font-size: .8rem; }
+    .results {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 8px;
+      max-height: 330px;
+      margin-top: 12px;
+      overflow: auto;
+      scrollbar-color: #774b3d #211616;
+    }
+    .result-card {
+      min-height: 78px;
+      padding: 10px;
+      border: 1px solid #64433a;
+      border-radius: 9px;
+      background: linear-gradient(145deg, #3b2525, #281c1d);
+      animation: reveal .24s ease-out both;
+    }
+    .result-card.tier-S { border-color: #d59d44; background: linear-gradient(145deg, #63451e, #35231b); }
+    .result-card.tier-A { border-color: #795b91; background: linear-gradient(145deg, #3f2d50, #281d2e); }
+    .result-card strong { display: block; font-size: .83rem; }
+    .result-card small { display: block; margin-top: 5px; color: #e7d6c6; line-height: 1.4; }
+    .empty { grid-column: 1 / -1; padding: 18px 8px; color: #bda899; text-align: center; }
+    .tabs { display: flex; gap: 7px; margin-bottom: 11px; }
+    .tabs button {
+      padding: 7px 12px;
+      border: 1px solid #684b40;
+      border-radius: 7px;
+      background: #2e2020;
+      color: #e8d5c5;
+      cursor: pointer;
+    }
+    .tabs button[aria-pressed="true"] { border-color: #e3a452; background: #6a3b27; color: white; }
+    .pool-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 7px; max-height: 480px; overflow: auto; }
+    .pool-item { padding: 8px 10px; border: 1px solid #493531; border-radius: 7px; background: #241a1a; color: #f0dfcf; font-size: .88rem; }
+    .pool-item::before { content: attr(data-tier); display: inline-grid; width: 21px; height: 21px; place-items: center; margin-right: 7px; border-radius: 5px; background: #70491e; color: #ffdc84; font-size: .72rem; font-weight: 800; vertical-align: middle; }
+    .pool-item[data-tier="A"]::before { background: #513969; color: #dfc3ff; }
+    .footnote { margin: 13px 2px 0; color: #a99180; font-size: .77rem; line-height: 1.6; }
+    .flash {
+      position: fixed;
+      z-index: 20;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      pointer-events: none;
+      background: #fff3b9;
+      opacity: 0;
+    }
+    .flash::before {
+      position: absolute;
+      inset: -55%;
+      background: repeating-conic-gradient(from 0deg, #fff8cc 0 7deg, #ffd45a 7deg 12deg, transparent 12deg 24deg);
+      content: "";
+      opacity: .8;
+      transform: scale(.2) rotate(0);
+    }
+    .flash-word {
+      position: relative;
+      color: #7d3517;
+      font-size: clamp(2.4rem, 10vw, 6.5rem);
+      font-weight: 1000;
+      letter-spacing: .13em;
+      text-shadow: 0 3px #fff4bf, 0 8px 25px #a84c14;
+      opacity: 0;
+      transform: scale(.3) rotate(-8deg);
+    }
+    .flash.show { animation: goldFlash .95s ease-out both; }
+    .flash.show::before { animation: sunburst .95s ease-out both; }
+    .flash.show .flash-word { animation: goldText .95s cubic-bezier(.15,.8,.2,1) both; }
+    @keyframes goldFlash {
+      0% { opacity: 0; }
+      12% { opacity: .98; }
+      33% { opacity: .72; }
+      52% { opacity: .96; }
+      100% { opacity: 0; }
+    }
+    @keyframes sunburst {
+      0% { opacity: .1; transform: scale(.2) rotate(0); }
+      45% { opacity: .9; transform: scale(1.1) rotate(18deg); }
+      100% { opacity: 0; transform: scale(1.5) rotate(32deg); }
+    }
+    @keyframes goldText {
+      0% { opacity: 0; transform: scale(.3) rotate(-8deg); }
+      24% { opacity: 1; transform: scale(1.08) rotate(2deg); }
+      67% { opacity: 1; transform: scale(1) rotate(0); }
+      100% { opacity: 0; transform: scale(1.18); }
+    }
+    @keyframes reveal {
+      from { opacity: 0; transform: translateY(7px) scale(.96); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @media (max-width: 760px) {
+      body { padding: 20px 10px 32px; }
+      .layout { grid-template-columns: 1fr; }
+      .panel { padding: 15px; }
+      .pool-list { max-height: 310px; }
+    }
+    @media (max-width: 400px) {
+      .rate, .stat { padding: 9px 7px; }
+      .rate span, .stat span { font-size: .75rem; }
+      .rate strong, .stat strong { font-size: 1.2rem; }
+      .pool-list { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="flash" id="goldFlash" aria-hidden="true"><div class="flash-word">S 忍降临！</div></div>
+  <main class="app">
+    <header>
+      <div class="eyebrow">SHINOBI RECRUIT · FAN SIMULATOR</div>
+      <h1>忍界招募</h1>
+      <p>召集历代忍者，向忍界巅峰迈进</p>
+    </header>
+
+    <div class="layout">
+      <div class="stack">
+        <section class="panel" aria-labelledby="rateTitle">
+          <h2 id="rateTitle">招募概率与保底</h2>
+          <div class="rate-grid">
+            <div class="rate"><span>S 忍</span><strong class="s-text">20%</strong></div>
+            <div class="rate"><span>A 忍</span><strong class="a-text">25%</strong></div>
+            <div class="rate"><span>其他奖励</span><strong class="other-text">55%</strong></div>
+          </div>
+          <div class="pity-head"><span>距 S 忍保底</span><strong id="pityText">0 / 50</strong></div>
+          <div class="pity-track" role="progressbar" aria-label="距 S 忍保底进度" aria-valuemin="0" aria-valuemax="50" aria-valuenow="0">
+            <div class="pity-fill" id="pityFill"></div>
+          </div>
+          <p class="note">连续 49 抽未获得 S 忍后，第 50 抽必出 S 忍。获得 S 忍后保底计数清零。</p>
+        </section>
+
+        <section class="panel" aria-labelledby="recruitTitle">
+          <h2 id="recruitTitle">开始招募</h2>
+          <div class="actions">
+            <button type="button" data-count="1">单抽</button>
+            <button type="button" data-count="10">十连抽</button>
+            <button type="button" data-count="50">五十连 · 保底</button>
+            <button type="button" class="secondary" id="reset">重置记录</button>
+          </div>
+          <p class="note">点击 S 忍时会触发全屏金光特效；十连中出现多位 S 忍也会完整记录。</p>
+        </section>
+
+        <section class="panel" aria-labelledby="resultTitle">
+          <div class="result-head">
+            <h2 id="resultTitle">最近一轮结果</h2>
+            <span class="latest-label" id="roundLabel">等待招募</span>
+          </div>
+          <div class="results" id="results" aria-live="polite">
+            <div class="empty">你的忍者招募结果会显示在这里</div>
+          </div>
+        </section>
+
+        <section class="panel" aria-labelledby="statsTitle">
+          <h2 id="statsTitle">累计统计</h2>
+          <div class="stats">
+            <div class="stat"><span>总抽数</span><strong id="totalPulls">0</strong></div>
+            <div class="stat"><span>S 忍</span><strong id="sCount" class="s-text">0</strong></div>
+            <div class="stat"><span>A 忍</span><strong id="aCount" class="a-text">0</strong></div>
+          </div>
+        </section>
+      </div>
+
+      <section class="panel" aria-labelledby="poolTitle">
+        <h2 id="poolTitle">忍者卡池 <span id="poolCount" class="latest-label"></span></h2>
+        <div class="tabs" role="group" aria-label="切换忍者卡池">
+          <button type="button" data-pool="S" aria-pressed="true">S 忍池</button>
+          <button type="button" data-pool="A" aria-pressed="false">A 忍池</button>
+        </div>
+        <div class="pool-list" id="poolList"></div>
+        <p class="footnote">角色均以文字展示，不使用游戏素材。此为粉丝自制概率模拟器；名单和概率为模拟内容，不代表官方实时卡池或官方抽卡概率。</p>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const pools = {
+        S: [
+          "大筒木一式", "宇智波斑（六道）", "宇智波斑（秽土转生）",
+          "宇智波斑（木叶创立）", "大筒木辉夜", "大筒木桃式",
+          "大筒木舍人", "漩涡鸣人（六道仙人）", "漩涡鸣人（九喇嘛连结）",
+          "漩涡鸣人（九尾查克拉）", "宇智波佐助（轮回眼）",
+          "宇智波佐助（永恒万花筒）", "宇智波带土（十尾人柱力）",
+          "宇智波带土（忍界大战）", "波风水门（青年）",
+          "波风水门（秽土转生）", "千手柱间（木叶创立）",
+          "千手柱间（秽土转生）", "迈特凯（八门遁甲）", "大蛇丸（晓）",
+          "自来也（仙人模式）", "纲手（百豪）", "佩恩（天道超）",
+          "旗木卡卡西（神威）", "长门（秽土转生）", "小南（神之天使）",
+          "春野樱（百豪）", "我爱罗（五代风影）", "雷影艾（四代目）",
+          "鬼灯幻月（秽土转生）"
+        ],
+        A: [
+          "宇智波鼬", "干柿鬼鲛", "迪达拉", "蝎", "角都", "飞段",
+          "小南", "佩恩（修罗道）", "宇智波止水", "志村团藏", "长门",
+          "宇智波佐助（鹰小队）", "宇智波带土（面具男）", "半藏（秽土转生）",
+          "药师兜（仙人模式）", "君麻吕（咒印）", "金角", "银角",
+          "漩涡鸣人（疾风传）", "宇智波佐助（疾风传）", "春野樱（疾风传）",
+          "旗木卡卡西（疾风传）", "我爱罗（疾风传）", "李洛克（疾风传）",
+          "日向宁次（疾风传）", "天天（疾风传）", "夕日红", "自来也",
+          "大蛇丸", "千代", "桃地再不斩（秽土转生）", "白（秽土转生）",
+          "猿飞阿斯玛（秽土转生）", "迪达拉（秽土转生）",
+          "宇智波鼬（晓创生）", "四代风影", "漩涡香燐", "重吾",
+          "水月", "宇智波佐助（咒印）"
+        ]
+      };
+
+      const state = {
+        total: 0,
+        s: 0,
+        a: 0,
+        pity: 0,
+        other: 0
+      };
+      let activePool = "S";
+      let flashTimer;
+      const $ = selector => document.querySelector(selector);
+
+      function renderPool() {
+        const list = $("#poolList");
+        list.replaceChildren();
+        for (const name of pools[activePool]) {
+          const item = document.createElement("div");
+          item.className = "pool-item";
+          item.dataset.tier = activePool;
+          item.textContent = name;
+          list.append(item);
+        }
+        $("#poolCount").textContent = `(${pools[activePool].length} 位)`;
+      }
+
+      function updateStats() {
+        $("#totalPulls").textContent = state.total;
+        $("#sCount").textContent = state.s;
+        $("#aCount").textContent = state.a;
+        $("#pityText").textContent = `${state.pity} / 50`;
+        $("#pityFill").style.width = `${state.pity * 2}%`;
+        $(".pity-track").setAttribute("aria-valuenow", state.pity);
+      }
+
+      function drawOne() {
+        const guaranteed = state.pity >= 49;
+        const roll = Math.random();
+        let tier;
+        let name;
+
+        if (guaranteed || roll < 0.20) {
+          tier = "S";
+          name = pools.S[Math.floor(Math.random() * pools.S.length)];
+          state.s++;
+          state.pity = 0;
+        } else if (roll < 0.45) {
+          tier = "A";
+          name = pools.A[Math.floor(Math.random() * pools.A.length)];
+          state.a++;
+          state.pity++;
+        } else {
+          tier = "other";
+          name = "金币 / 普通奖励";
+          state.other++;
+          state.pity++;
+        }
+        state.total++;
+        return { tier, name, guaranteed };
+      }
+
+      function showGoldFlash(sResults) {
+        if (!sResults.length) return;
+        const flash = $("#goldFlash");
+        const word = flash.querySelector(".flash-word");
+        word.textContent = sResults.some(result => result.guaranteed) ? "保底 S 忍降临！" : "S 忍降临！";
+        flash.classList.remove("show");
+        void flash.offsetWidth;
+        flash.classList.add("show");
+        clearTimeout(flashTimer);
+        flashTimer = setTimeout(() => flash.classList.remove("show"), 1000);
+      }
+
+      function renderResults(results) {
+        const container = $("#results");
+        container.replaceChildren();
+        for (const [index, result] of results.entries()) {
+          const card = document.createElement("div");
+          card.className = `result-card tier-${result.tier}`;
+          card.style.animationDelay = `${Math.min(index * 28, 240)}ms`;
+          const title = document.createElement("strong");
+          title.className = result.tier === "S" ? "s-text" : result.tier === "A" ? "a-text" : "other-text";
+          title.textContent = result.tier === "other" ? "其他奖励" : `${result.tier} 忍${result.guaranteed ? " · 保底" : ""}`;
+          const name = document.createElement("small");
+          name.textContent = result.name;
+          card.append(title, name);
+          container.append(card);
+        }
+      }
+
+      function recruit(count) {
+        const results = Array.from({ length: count }, drawOne);
+        renderResults(results);
+        updateStats();
+        $("#roundLabel").textContent = `本轮 ${count} 抽`;
+        showGoldFlash(results.filter(result => result.tier === "S"));
+      }
+
+      document.querySelectorAll("[data-count]").forEach(button => {
+        button.addEventListener("click", () => recruit(Number(button.dataset.count)));
+      });
+
+      document.querySelectorAll("[data-pool]").forEach(button => {
+        button.addEventListener("click", () => {
+          activePool = button.dataset.pool;
+          document.querySelectorAll("[data-pool]").forEach(tab => {
+            tab.setAttribute("aria-pressed", String(tab === button));
+          });
+          renderPool();
+        });
+      });
+
+      $("#reset").addEventListener("click", () => {
+        state.total = 0;
+        state.s = 0;
+        state.a = 0;
+        state.other = 0;
+        state.pity = 0;
+        updateStats();
+        $("#roundLabel").textContent = "等待招募";
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "你的忍者招募结果会显示在这里";
+        $("#results").replaceChildren(empty);
+        $("#goldFlash").classList.remove("show");
+        clearTimeout(flashTimer);
+      });
+
+      renderPool();
+      updateStats();
+    })();
+  </script>
+</body>
+</html>
